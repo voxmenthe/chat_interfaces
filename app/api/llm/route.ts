@@ -12,18 +12,18 @@ export async function POST(req: Request) {
 
     process.stdout.on('data', (data) => {
       output += data.toString();
-      console.log(data.toString()); // This will log all stdout to the terminal
+      console.log('Python stdout:', data.toString());
     });
 
     process.stderr.on('data', (data) => {
       errorOutput += data.toString();
-      console.error(data.toString()); // This will log all stderr to the terminal
+      console.error('Python stderr:', data.toString());
     });
 
     process.on('close', (code) => {
-      if (code !== 0) {
-        console.error(`Python process exited with code ${code}`);
-        resolve(NextResponse.json({ error: errorOutput || 'Unknown error occurred' }, { status: 500 }));
+      console.log(`Python process exited with code ${code}`);
+      if (code !== 0 || errorOutput) {
+        resolve(NextResponse.json({ error: errorOutput || output || 'Unknown error occurred' }, { status: 500 }));
       } else {
         resolve(NextResponse.json({ response: output.trim() }));
       }

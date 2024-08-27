@@ -1,5 +1,7 @@
+# flake8: noqa E501
 import logging
 from mlx_lm import load, generate
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -11,14 +13,19 @@ class LLMProcessor:
         self.model, self.tokenizer = load(model_name)
         logger.info("Model loaded successfully")
 
-    def process_input(self, prompt, max_tokens=2048, temp=0.7):
+    def process_input(self, prompt, max_tokens=2048, temp=0.7, top_p=0.87):
         logger.info(f"Processing input: {prompt[:50]}...")
         prompt = f"Instruction: {prompt}\nResponse:"
-        tokens = generate(self.model, self.tokenizer, prompt, max_tokens=max_tokens, temp=temp)
-        response = self.tokenizer.decode(tokens)
-        logger.info(f"Generated response: {response[:50]}...")
-        return response
-
+        try:
+            response = generate(self.model, self.tokenizer, prompt, max_tokens=max_tokens, temp=temp, top_p=top_p)
+            logger.info(f"Generated response: {response[:50]}...")
+            return response
+        except Exception as e:
+            logger.error(f"Error in generate function: {str(e)}")
+            logger.error(f"Input type: {type(prompt)}, Content: {prompt[:100]}")
+            logger.error(f"Tokenizer type: {type(self.tokenizer)}")
+            logger.error(f"Model type: {type(self.model)}")
+            raise
 
 # Initialize the processor
 processor = LLMProcessor()

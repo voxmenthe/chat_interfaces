@@ -17,5 +17,7 @@ if __name__ == "__main__":
         result = process_llm_input(input_text)
         print(result)
     except Exception as e:
-        logger.error(f"Error processing input: {str(e)}")
-        print(f"Error: {str(e)}")
+        error_message = f"Error processing input: {str(e)}"
+        logger.error(error_message)
+        print(error_message)  # This will be captured by the Node.js process
+        sys.exit(1)
