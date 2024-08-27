@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, KeyboardEvent, ChangeEvent } from 'react'
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Send, Upload } from "lucide-react"
+import { Send, Upload, RefreshCw } from "lucide-react"
 import Markdown from 'markdown-to-jsx'
 
 interface Message {
@@ -64,7 +64,10 @@ export default function Component() {
     }
   }
 
-  // Handle form submission
+  const getConversationContext = () => {
+    return conversation.map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`).join('\n\n')
+  }
+
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if ((!input.trim() && !fileContent) || isLoading) return;
@@ -76,13 +79,16 @@ export default function Component() {
     setFileContent(null);
     setIsLoading(true);
 
+    const context = getConversationContext();
+    const fullInput = `${context}\n\nUser: ${messageContent}`;
+
     try {
       const response = await fetch('/api/llm', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ input: messageContent }),
+        body: JSON.stringify({ input: fullInput }),
       });
 
       const data = await response.json();
@@ -106,6 +112,12 @@ export default function Component() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleResetChat = () => {
+    setConversation([]);
+    setInput('');
+    setFileContent(null);
   };
 
   // Handle Enter key press
@@ -157,6 +169,11 @@ export default function Component() {
           )}
         </div>
       </ScrollArea>
+      <div className="flex space-x-3 mb-3">
+        <Button onClick={handleResetChat} variant="outline" className="w-full">
+          <RefreshCw className="mr-2 h-4 w-4" /> Reset Chat
+        </Button>
+      </div>
       <form onSubmit={handleSubmit} className="flex space-x-3">
         <Textarea
           value={input}
