@@ -12,7 +12,6 @@ export async function POST(req: Request) {
 
     process.stdout.on('data', (data) => {
       output += data.toString();
-      console.log('Python stdout:', data.toString());
     });
 
     process.stderr.on('data', (data) => {
@@ -22,10 +21,16 @@ export async function POST(req: Request) {
 
     process.on('close', (code) => {
       console.log(`Python process exited with code ${code}`);
-      if (code !== 0 || errorOutput) {
-        resolve(NextResponse.json({ error: errorOutput || output || 'Unknown error occurred' }, { status: 500 }));
+      if (code !== 0) {
+        resolve(NextResponse.json({ error: errorOutput || 'Unknown error occurred' }, { status: 500 }));
       } else {
-        resolve(NextResponse.json({ response: output.trim() }));
+        try {
+          const parsedOutput = JSON.parse(output);
+          console.log('Python stdout:', parsedOutput.stdout);
+          resolve(NextResponse.json({ response: parsedOutput.llm_output }));
+        } catch (error) {
+          resolve(NextResponse.json({ error: 'Failed to parse Python output' }, { status: 500 }));
+        }
       }
     });
   });

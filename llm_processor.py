@@ -22,9 +22,6 @@ class LLMProcessor:
             return response
         except Exception as e:
             logger.error(f"Error in generate function: {str(e)}")
-            logger.error(f"Input type: {type(prompt)}, Content: {prompt[:100]}")
-            logger.error(f"Tokenizer type: {type(self.tokenizer)}")
-            logger.error(f"Model type: {type(self.model)}")
             raise
 
 # Initialize the processor

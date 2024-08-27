@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Send, Upload } from "lucide-react"
+import Markdown from 'markdown-to-jsx'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -128,9 +129,25 @@ export default function Component() {
                   : 'bg-card text-card-foreground'
               } max-w-[80%] w-fit animate-fade-in shadow-md`}
             >
-              <p className="text-sm md:text-base leading-relaxed break-words">
-                {message.content}
-              </p>
+              <div className="text-sm md:text-base leading-relaxed break-words whitespace-pre-wrap">
+                <Markdown
+                  options={{
+                    overrides: {
+                      p: { props: { className: 'mb-2' } },
+                      h1: { props: { className: 'text-2xl font-bold mb-2' } },
+                      h2: { props: { className: 'text-xl font-bold mb-2' } },
+                      h3: { props: { className: 'text-lg font-bold mb-2' } },
+                      ul: { props: { className: 'list-disc list-inside mb-2' } },
+                      ol: { props: { className: 'list-decimal list-inside mb-2' } },
+                      li: { props: { className: 'ml-4' } },
+                      code: { props: { className: 'bg-gray-100 rounded px-1' } },
+                      pre: { props: { className: 'bg-gray-100 rounded p-2 mb-2 overflow-x-auto' } },
+                    },
+                  }}
+                >
+                  {message.content}
+                </Markdown>
+              </div>
             </div>
           ))}
           {isLoading && (
