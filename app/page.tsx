@@ -70,43 +70,41 @@ export default function Component() {
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if ((!input.trim() && !fileContent) || isLoading) return;
+    const messageContent = fileContent || input.trim();
+    if (!messageContent || isLoading) return;
 
-    const messageContent = fileContent || input;
     const userMessage: Message = { role: 'user', content: messageContent };
     setConversation(prev => [...prev, userMessage]);
     setInput('');
     setFileContent(null);
     setIsLoading(true);
 
-    const context = getConversationContext();
-    const fullInput = `${context}\n\nUser: ${messageContent}`;
-
     try {
       const response = await fetch('/api/llm', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ input: fullInput }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [...conversation, userMessage] }),
       });
 
-      const data = await response.json();
+      if (!response.ok) throw new Error('Failed to process input');
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to process input');
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let assistantMessage: Message = { role: 'assistant', content: '' };
+
+      while (true) {
+        const { done, value } = await reader!.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        assistantMessage.content += chunk;
       }
 
-      const assistantMessage: Message = { 
-        role: 'assistant', 
-        content: data.response
-      };
       setConversation(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Error processing input:', error);
       const errorMessage: Message = {
         role: 'assistant',
-        content: error instanceof Error ? error.message : 'Sorry, there was an error processing your input.'
+        content: error instanceof Error ? error.message : 'An error occurred. Please try again.'
       };
       setConversation(prev => [...prev, errorMessage]);
     } finally {
