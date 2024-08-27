@@ -65,26 +65,46 @@ export default function Component() {
 
   // Handle form submission
   const handleSubmit = async (e?: React.FormEvent) => {
-    e?.preventDefault()
-    if ((!input.trim() && !fileContent) || isLoading) return
+    e?.preventDefault();
+    if ((!input.trim() && !fileContent) || isLoading) return;
 
-    const messageContent = fileContent || input
-    const userMessage: Message = { role: 'user', content: messageContent }
-    setConversation(prev => [...prev, userMessage])
-    setInput('')
-    setFileContent(null)
-    setIsLoading(true)
+    const messageContent = fileContent || input;
+    const userMessage: Message = { role: 'user', content: messageContent };
+    setConversation(prev => [...prev, userMessage]);
+    setInput('');
+    setFileContent(null);
+    setIsLoading(true);
 
-    // Simulating API call to LLM
-    setTimeout(() => {
+    try {
+      const response = await fetch('/api/llm', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ input: messageContent }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to process input');
+      }
+
+      const data = await response.json();
       const assistantMessage: Message = { 
         role: 'assistant', 
-        content: `This is a simulated response to: "${messageContent}"`
-      }
-      setConversation(prev => [...prev, assistantMessage])
-      setIsLoading(false)
-    }, 1000)
-  }
+        content: data.response
+      };
+      setConversation(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Error processing input:', error);
+      const errorMessage: Message = {
+        role: 'assistant',
+        content: 'Sorry, there was an error processing your input.'
+      };
+      setConversation(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Handle Enter key press
   const handleKeyPress = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -129,7 +149,9 @@ export default function Component() {
           rows={3}
         />
         <div className="flex flex-col space-y-2">
+          <label htmlFor="file-upload" className="sr-only">Upload file</label>
           <input
+            id="file-upload"
             type="file"
             accept=".txt"
             onChange={handleFileChange}
@@ -142,10 +164,11 @@ export default function Component() {
             variant="outline"
             onClick={() => fileInputRef.current?.click()}
             className="w-10 h-10"
+            aria-label="Upload file"
           >
             <Upload className="h-4 w-4" />
           </Button>
-          <Button type="submit" size="icon" disabled={isLoading} className="w-10 h-10">
+          <Button type="submit" size="icon" disabled={isLoading} className="w-10 h-10" aria-label="Send message">
             <Send className="h-4 w-4" />
           </Button>
         </div>
