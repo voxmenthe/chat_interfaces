@@ -84,11 +84,12 @@ export default function Component() {
         body: JSON.stringify({ input: messageContent }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to process input');
+        throw new Error(data.error || 'Failed to process input');
       }
 
-      const data = await response.json();
       const assistantMessage: Message = { 
         role: 'assistant', 
         content: data.response
@@ -98,7 +99,7 @@ export default function Component() {
       console.error('Error processing input:', error);
       const errorMessage: Message = {
         role: 'assistant',
-        content: 'Sorry, there was an error processing your input.'
+        content: error instanceof Error ? error.message : 'Sorry, there was an error processing your input.'
       };
       setConversation(prev => [...prev, errorMessage]);
     } finally {
